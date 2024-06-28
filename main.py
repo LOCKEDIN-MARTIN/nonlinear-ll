@@ -1,13 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 
 
-def get_cl(alpha, y):  # this assumes a NACA0012 airfoil, unstalled behaviour
-
-    m = 0.1454  # assumed (for now) lift slope, HIGHLY SENSITIVE
-    c_l = m * alpha
-
-    return c_l
+def get_cl(alpha, m):  # m is VERY IMPORTANT TO GET RIGHT
+    return alpha * m
 
 
 def gamma_dist(y, L0, b, rho, Vinf):  # note that this assumes an elliptical lift distribution
@@ -69,9 +66,22 @@ def get_lift(Vinf, S, g, y):
 
 
 def get_induced_drag(Vinf, S, g, y):
+
     a_i = get_induced_alpha(Vinf, g, y)
 
     return 2 * 2 / (Vinf * S) * np.trapz(g * a_i, y)
+
+
+def get_Re(rho, u, c, mu):
+    return rho * u * c / mu
+
+
+class clData:
+    def __init__(self, Re):
+        self.Re = Re
+
+    def read(self):
+        
 
 
 if __name__ == '__main__':
@@ -92,7 +102,14 @@ if __name__ == '__main__':
     alpha_i = get_induced_alpha(freestream, gamma, stations)
     alpha_e = get_effective_alpha(aoa, alpha_i, stations)
 
-    c_l = get_cl(alpha_e, stations)
+    Re_list = [50000, 100000, 200000, 500000, 1000000]
+    Re_dict = {}
+    for i in range(0, len(Re_list)):
+        Re_dict[Re_list[i]] = clData(Re_list[i])
+
+    cl_alpha = 0.06
+
+    c_l = get_cl(alpha_e, cl_alpha)
 
     gamma_new = get_new_gamma_dist(freestream, discrete_wing(root_c, 0, root_c, 0, num_stations), c_l)
 
