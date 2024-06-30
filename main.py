@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+from pathlib import Path
+import re
 
 
 def get_cl(alpha, m):  # m is VERY IMPORTANT TO GET RIGHT
@@ -66,7 +68,6 @@ def get_lift(Vinf, S, g, y):
 
 
 def get_induced_drag(Vinf, S, g, y):
-
     a_i = get_induced_alpha(Vinf, g, y)
 
     return 2 * 2 / (Vinf * S) * np.trapz(g * a_i, y)
@@ -77,11 +78,49 @@ def get_Re(rho, u, c, mu):
 
 
 class clData:
-    def __init__(self, Re):
+    def __init__(self, Re, Alpha=[], Cl=[]):
         self.Re = Re
+        self.Alpha = []
+        self.Cl = []
 
-    def read(self):
-        
+    def fetch(self):
+        data_dir = input("Paste path to folder containing cl data:\n")
+        file_prefix = r'\xf-n0012-il-'
+        file_suffix = '.csv'
+
+        target = Path(data_dir + file_prefix + str(self.Re) + file_suffix)
+
+        if not target.is_file():
+            print('File not found, double-check directory and name of: ', target)
+
+        else:
+            with open(target, newline='') as csvfile:
+                reader = list(csv.reader(csvfile, delimiter=' ', quotechar='|'))  # converted to list for indexing
+            csvfile.close()
+
+            blank_line = 0
+            row_index = 0
+            while not blank_line:
+                if not reader[row_index]:
+                    blank_line = 1
+                else:
+                    row_index += 1
+
+            reader = reader[row_index + 1:]
+            reformatted_reader = []
+            for row in reader:
+                string_to_split = row[0]
+                reformatted_reader.append(re.split(',', string_to_split))
+
+            var_name = reformatted_reader[0]
+            alpha_index = var_name.index('Alpha')
+            cl_index = var_name.index('Cl')
+
+            for row_index in range(1, len(reformatted_reader)):
+                reformatted_reader[row_index] = [float(ii) for ii in reformatted_reader[row_index]]
+                curr = reformatted_reader[row_index]
+                self.Alpha.append(curr[alpha_index])
+                self.Cl.append(curr[cl_index])
 
 
 if __name__ == '__main__':
@@ -94,7 +133,7 @@ if __name__ == '__main__':
 
     aoa = 2  # [deg]
     aoa = aoa * np.ones(num_stations - 1)
-    freestream = 9.58 * (200000/200000)  # [m/s]
+    freestream = 9.58 * (200000 / 200000)  # [m/s]
     area = 0.42  # [m2]
 
     gamma = gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
@@ -136,3 +175,7 @@ if __name__ == '__main__':
 
     print(f'Wing lift coefficient C_L={round(get_lift(freestream, area, gamma_new, stations), 3)}')
     print(f'Wing induced drag coefficient C_Di={round(get_induced_drag(freestream, area, gamma_new, stations), 6)}')
+
+    test = clData(50000)
+    test.fetch()
+    print(test.Cl)
