@@ -78,7 +78,7 @@ def get_Re(rho, u, c, mu):
 
 
 class clData:
-    def __init__(self, Re, Alpha=[], Cl=[]):
+    def __init__(self, Re):
         self.Re = Re
         self.Alpha = []
         self.Cl = []
@@ -121,6 +121,15 @@ class clData:
                 curr = reformatted_reader[row_index]
                 self.Alpha.append(curr[alpha_index])
                 self.Cl.append(curr[cl_index])
+
+    def plot(self):
+        self.fetch()
+        plt.plot(self.Alpha, self.Cl)
+        plt.grid()
+        plt.title('Cl-Alpha plot')
+        plt.ylabel('Cl')
+        plt.xlabel('Alpha')
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -177,5 +186,4 @@ if __name__ == '__main__':
     print(f'Wing induced drag coefficient C_Di={round(get_induced_drag(freestream, area, gamma_new, stations), 6)}')
 
     test = clData(50000)
-    test.fetch()
-    print(test.Cl)
+    test.plot()
