@@ -185,5 +185,15 @@ if __name__ == '__main__':
     print(f'Wing lift coefficient C_L={round(get_lift(freestream, area, gamma_new, stations), 3)}')
     print(f'Wing induced drag coefficient C_Di={round(get_induced_drag(freestream, area, gamma_new, stations), 6)}')
 
-    test = clData(50000)
-    test.plot()
+    data_50k = clData(50000)
+    data_100k = clData(100000)
+    data_200k = clData(200000)
+    data_500k = clData(500000)
+    data_1m = clData(1000000)
+
+    r = 1.225  # [kg/m3]
+    c = discrete_wing(root_c, 0, root_c, 0, num_stations)  # [m]
+    m = 0.0000318  # [kg/ms]
+    Re = get_Re(r, freestream, c, m)
+
+    print(Re)
