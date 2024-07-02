@@ -82,6 +82,7 @@ class clData:
         self.Re = Re
         self.Alpha = []
         self.Cl = []
+        self.Cl_Alpha = []
 
     def fetch(self):
         data_dir = input("Paste path to folder containing cl data:\n")
@@ -130,6 +131,11 @@ class clData:
         plt.ylabel('Cl')
         plt.xlabel('Alpha')
         plt.show()
+
+    def slope(self):
+        self.fetch()
+        self.Cl_Alpha = np.gradient(self.Cl, self.Alpha)
+        return self.Cl_Alpha
 
 
 if __name__ == '__main__':
@@ -196,4 +202,4 @@ if __name__ == '__main__':
     m = 0.0000318  # [kg/ms]
     Re = get_Re(r, freestream, c, m)
 
-    print(Re)
+    test = data_100k.slope()
