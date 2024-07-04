@@ -51,7 +51,7 @@ def get_lift(Vinf, S, g, y):
 
 
 def get_induced_drag(Vinf, S, g, y):
-    a_i = aero.get_induced_alpha(Vinf, g, y)
+    a_i = get_induced_alpha(Vinf, g, y)
 
     return 2 * 2 / (Vinf * S) * np.trapz(g * a_i, y)
 

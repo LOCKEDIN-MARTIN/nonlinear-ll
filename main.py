@@ -55,13 +55,28 @@ class clData:
                 self.Alpha.append(curr[alpha_index])
                 self.Cl.append(curr[cl_index])
 
-    def plot(self):
-        self.fetch()
-        plt.plot(self.Alpha, self.Cl)
-        plt.grid()
-        plt.title('Cl-Alpha plot')
-        plt.ylabel('Cl')
-        plt.xlabel('Alpha')
+    def plot(self, option):
+
+        plt.clf()
+
+        if option == 'a':
+
+            self.fetch()
+            plt.plot(self.Alpha, self.Cl)
+            plt.grid()
+            plt.title('Cl-Alpha plot')
+            plt.ylabel('Cl')
+            plt.xlabel('Alpha')
+
+        elif option == 's':
+
+            self.slope()
+            plt.plot(self.Alpha, self.Cl_Alpha)
+            plt.grid()
+            plt.title('Cl-Alpha Slope plot')
+            plt.ylabel('Cl-Alpha Slope')
+            plt.xlabel('Alpha')
+
         plt.show()
 
     def slope(self):
@@ -134,4 +149,4 @@ if __name__ == '__main__':
     m = 0.0000318  # [kg/ms]
     Re = aero.get_Re(r, freestream, c, m)
 
-    test = data_100k.slope()
+    data_100k.plot('s')
