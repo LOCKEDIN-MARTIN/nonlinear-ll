@@ -61,7 +61,6 @@ class clData:
 
         if option == 'a':
 
-            self.fetch()
             plt.plot(self.Alpha, self.Cl)
             plt.grid()
             plt.title('Cl-Alpha plot')
@@ -80,7 +79,6 @@ class clData:
         plt.show()
 
     def slope(self):
-        self.fetch()
         self.Cl_Alpha = np.gradient(self.Cl, self.Alpha)
         return self.Cl_Alpha
 
@@ -149,4 +147,10 @@ if __name__ == '__main__':
     m = 0.0000318  # [kg/ms]
     Re = aero.get_Re(r, freestream, c, m)
 
-    data_100k.plot('s')
+    data_50k.fetch()
+    data_100k.fetch()
+    data_200k.fetch()
+    data_500k.fetch()
+    data_1m.fetch()
+
+    calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
