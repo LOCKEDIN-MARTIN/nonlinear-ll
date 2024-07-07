@@ -82,7 +82,7 @@ if __name__ == '__main__':
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
-    aoa = 4  # [deg]
+    aoa = 45  # [deg]
     aoa = aoa * np.ones(num_stations - 1)
     freestream = 10  # [m/s]
     area = 0.231  # [m2]
