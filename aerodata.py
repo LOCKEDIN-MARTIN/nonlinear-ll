@@ -73,16 +73,16 @@ class clData:
 
 
 if __name__ == '__main__':
-    half_span = 1.138  # [m]
+    half_span = 0.724  # [m]
     root_c = 0.395  # [m]
-    tip_c = 0.238  # [m]
+    tip_c = 0.234  # [m]
     tip_offset = 0.086  # [m]
     num_stations = 7
 
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
-    aoa = 45  # [deg]
+    aoa = 48.3  # [deg]
     aoa = aoa * np.ones(num_stations - 1)
     freestream = 10  # [m/s]
     area = 0.231  # [m2]
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     cl_alpha_domain = aerodata.slope()
     cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
 
-    c_l = aero.get_cl(alpha_e, cl_alpha_distribution)
+    c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
 
     gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, tip_c, tip_offset, num_stations), c_l)
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
         cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
-        c_l = aero.get_cl(alpha_e, cl_alpha_distribution)
+        c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
         gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, tip_c, tip_offset, num_stations), c_l)
 
         j += 1

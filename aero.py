@@ -47,13 +47,13 @@ def get_new_gamma_dist(Vinf, chord, c_l_dist):
 
 
 def get_lift(Vinf, S, g, y):
-    return 2 * 2 / (Vinf * S) * np.trapz(g, y)
+    return 2 / (Vinf * S) * np.trapz(g, y)
 
 
 def get_induced_drag(Vinf, S, g, y):
     a_i = get_induced_alpha(Vinf, g, y)
 
-    return 2 * 2 / (Vinf * S) * np.trapz(g * a_i, y)
+    return 2 / (Vinf * S) * np.trapz(g * a_i, y)
 
 
 def get_Re(rho, u, c, mu):
