@@ -17,6 +17,7 @@ class clData:
 
     def fetch(self):
         data_dir = input("Paste path to cl data:\n")
+        data_dir = data_dir.strip('\"')
 
         target = Path(data_dir)
 
@@ -74,7 +75,7 @@ class clData:
 
 if __name__ == '__main__':
     half_span = 0.724  # [m]
-    root_c = 0.395  # [m]
+    root_c = 0.4  # [m]
     tip_c = 0.234  # [m]
     tip_offset = 0.086  # [m]
     num_stations = 7
@@ -82,24 +83,25 @@ if __name__ == '__main__':
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
+    aerodata = clData()
+    aerodata.fetch()
+
     aoa = 48.3  # [deg]
     aoa = aoa * np.ones(num_stations - 1)
     freestream = 10  # [m/s]
-    area = 0.231  # [m2]
+    area = 0.233  # [m2]
 
     gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
 
     alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
     alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
 
-    aerodata = clData()
-    aerodata.fetch()
     cl_alpha_domain = aerodata.slope()
     cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
 
     c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
 
-    gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, tip_c, tip_offset, num_stations), c_l)
+    gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
 
     j = 0
     err = [calc.compare_gamma(gamma, gamma_new)]
@@ -111,7 +113,7 @@ if __name__ == '__main__':
         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
         cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
         c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
-        gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, tip_c, tip_offset, num_stations), c_l)
+        gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
 
         j += 1
         err.append(calc.compare_gamma(gamma, gamma_new))
