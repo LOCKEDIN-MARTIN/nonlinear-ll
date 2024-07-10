@@ -86,44 +86,45 @@ if __name__ == '__main__':
     aerodata = clData()
     aerodata.fetch()
 
-    aoa = 48.3  # [deg]
-    aoa = aoa * np.ones(num_stations - 1)
-    freestream = 10  # [m/s]
-    area = 0.233  # [m2]
+    num_angles = 35
+    alpha_sweep = np.linspace(0, 45, num_angles)
 
-    gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
+    c_l_sweep = []
 
-    alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-    alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+    for aoa in alpha_sweep:
 
-    cl_alpha_domain = aerodata.slope()
-    cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
+        aoa = aoa * np.ones(num_stations - 1)
+        freestream = 10  # [m/s]
+        area = 0.233  # [m2]
 
-    c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
-
-    gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
-
-    j = 0
-    err = [calc.compare_gamma(gamma, gamma_new)]
-    D = 0.05
-    while (err[j] > 0.01) & (j < 600):
-        gamma = gamma + D * (gamma_new - gamma)
+        gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
 
         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-        cl_alpha_distribution = np.interp(alpha_e, aerodata.Alpha, cl_alpha_domain)
+
         c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
+
         gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
 
-        j += 1
-        err.append(calc.compare_gamma(gamma, gamma_new))
+        j = 0
+        err = [calc.compare_gamma(gamma, gamma_new)]
+        D = 0.05
+        while (err[j] > 0.01) & (j < 600):
+            gamma = gamma + D * (gamma_new - gamma)
 
-    plt.semilogy(np.linspace(0, j, j + 1), err)
+            alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
+            alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+            c_l = np.interp(alpha_e, aerodata.Alpha, aerodata.Cl)
+            gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
+
+            j += 1
+            err.append(calc.compare_gamma(gamma, gamma_new))
+
+        c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
+
+    plt.plot(alpha_sweep, c_l_sweep)
     plt.grid()
-    plt.title('L2 error norm of circulation distribution')
-    plt.ylabel('L2 error norm')
-    plt.xlabel('Iteration')
+    plt.title('Cl-Alpha Plot for 3D Wing')
+    plt.ylabel('Cl []')
+    plt.xlabel('Alpha [deg]')
     plt.show()
-
-    print(f'Wing lift coefficient C_L={round(aero.get_lift(freestream, area, gamma_new, stations), 3)}')
-    print(f'Wing induced drag coefficient C_Di={round(aero.get_induced_drag(freestream, area, gamma_new, stations), 6)}')
