@@ -80,6 +80,9 @@ if __name__ == '__main__':
     tip_offset = 0.086  # [m]
     num_stations = 7
 
+    aspect_ratio = 4.5
+    eff = 0.98
+
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
@@ -90,6 +93,7 @@ if __name__ == '__main__':
     alpha_sweep = np.linspace(0, 45, num_angles)
 
     c_l_sweep = []
+    c_di_sweep = []
 
     for aoa in alpha_sweep:
 
@@ -121,10 +125,11 @@ if __name__ == '__main__':
             err.append(calc.compare_gamma(gamma, gamma_new))
 
         c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
+        c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
 
-    plt.plot(alpha_sweep, c_l_sweep)
+    plt.plot(alpha_sweep, c_di_sweep)
     plt.grid()
-    plt.title('Cl-Alpha Plot for 3D Wing')
-    plt.ylabel('Cl []')
+    plt.title('Cdi-Alpha Plot for 3D Wing')
+    plt.ylabel('Cdi []')
     plt.xlabel('Alpha [deg]')
     plt.show()

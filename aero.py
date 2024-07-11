@@ -50,10 +50,8 @@ def get_lift(Vinf, S, g, y):
     return 2 / (Vinf * S) * np.trapz(g, y)
 
 
-def get_induced_drag(Vinf, S, g, y):
-    a_i = get_induced_alpha(Vinf, g, y)
-
-    return 2 / (Vinf * S) * np.trapz(g * a_i, y)
+def get_induced_drag(C_l, AR, e):
+    return C_l ** 2 / (np.pi * AR * e)
 
 
 def get_Re(rho, u, c, mu):
