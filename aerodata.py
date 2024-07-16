@@ -127,9 +127,31 @@ if __name__ == '__main__':
         c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
         c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
 
+    plt.plot(alpha_sweep, c_l_sweep)
+    plt.grid()
+    plt.title('Cdi-Alpha Plot for 3D Wing')
+    plt.ylabel('Cdi []')
+    plt.xlabel('Alpha [deg]')
+    plt.show()
+
     plt.plot(alpha_sweep, c_di_sweep)
     plt.grid()
     plt.title('Cdi-Alpha Plot for 3D Wing')
     plt.ylabel('Cdi []')
     plt.xlabel('Alpha [deg]')
     plt.show()
+
+    fields = ['Alpha', 'C_di', 'C_l']
+
+    predict = []
+    for k in range(len(alpha_sweep)):
+        predict.append([str(alpha_sweep[k]), str(c_di_sweep[k]), str(c_l_sweep[k])])
+
+    writename = 'output.csv'
+
+    with open(writename, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(fields)
+        writer.writerows(predict)
+
+    csvfile.close()
