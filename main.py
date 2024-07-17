@@ -84,57 +84,17 @@ class clData:
 
 
 if __name__ == '__main__':
-    half_span = 0.750  # [m]
-    root_c = 0.309  # [m]
-    num_stations = 600
+    half_span = 0.724  # [m]
+    root_c = 0.4  # [m]
+    tip_c = 0.234  # [m]
+    tip_offset = 0.086  # [m]
+    num_stations = 7
+
+    aspect_ratio = 4.5
+    eff = 0.98
 
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
-
-    aoa = 2  # [deg]
-    aoa = aoa * np.ones(num_stations - 1)
-    freestream = 9.58 * (200000 / 200000)  # [m/s]
-    area = 0.42  # [m2]
-
-    gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
-
-    alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-    alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-
-    Re_list = [50000, 100000, 200000, 500000, 1000000]
-    Re_dict = {}
-    for i in range(0, len(Re_list)):
-        Re_dict[Re_list[i]] = clData(Re_list[i])
-
-    cl_alpha = 0.06
-
-    c_l = aero.get_cl(alpha_e, cl_alpha)
-
-    gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, 0, num_stations), c_l)
-
-    j = 0
-    err = [calc.compare_gamma(gamma, gamma_new)]
-    D = 0.05
-    while (err[j] > 0.01) & (j < 600):
-        gamma = gamma + D * (gamma_new - gamma)
-
-        alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-        alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-        c_l = aero.get_cl(alpha_e, cl_alpha)
-        gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, 0, num_stations), c_l)
-
-        j += 1
-        err.append(calc.compare_gamma(gamma, gamma_new))
-
-    plt.semilogy(np.linspace(0, j, j + 1), err)
-    plt.grid()
-    plt.title('L2 error norm of circulation distribution')
-    plt.ylabel('L2 error norm')
-    plt.xlabel('Iteration')
-    plt.show()
-
-    print(f'Wing lift coefficient C_L={round(aero.get_lift(freestream, area, gamma_new, stations), 3)}')
-    print(f'Wing induced drag coefficient C_Di={round(aero.get_induced_drag(freestream, area, gamma_new, stations), 6)}')
 
     data_50k = clData(50000)
     data_100k = clData(100000)
@@ -142,15 +102,83 @@ if __name__ == '__main__':
     data_500k = clData(500000)
     data_1m = clData(1000000)
 
-    r = 1.225  # [kg/m3]
-    c = geom.discrete_wing(root_c, 0, root_c, 0, num_stations)  # [m]
-    m = 0.0000318  # [kg/ms]
-    Re = aero.get_Re(r, freestream, c, m)
-
     data_50k.fetch()
     data_100k.fetch()
     data_200k.fetch()
     data_500k.fetch()
     data_1m.fetch()
 
-    calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
+    num_angles = 35
+    alpha_sweep = np.linspace(0, 7, num_angles)
+
+    Re_list = [50000, 100000, 200000, 500000, 1000000]
+    Re_dict = {}
+    for i in range(0, len(Re_list)):
+        Re_dict[Re_list[i]] = clData(Re_list[i])
+
+    # calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
+    data = [data_50k, data_100k, data_200k, data_500k, data_1m]
+
+    fig = plt.figure()
+    axs = fig.subplots(1, 2, sharey=False)
+
+    for Re in data:
+
+        c_l_sweep = []
+        c_di_sweep = []
+
+        for aoa in alpha_sweep:
+
+            aoa = aoa * np.ones(num_stations - 1)
+            freestream = 10  # [m/s]
+            area = 0.233  # [m2]
+
+            gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
+
+            alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
+            alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+
+            c_l = np.interp(alpha_e, Re.Alpha, Re.Cl)
+
+            gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
+
+            j = 0
+            err = [calc.compare_gamma(gamma, gamma_new)]
+            D = 0.05
+            while (err[j] > 0.01) & (j < 600):
+                gamma = gamma + D * (gamma_new - gamma)
+
+                alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
+                alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+                c_l = np.interp(alpha_e, Re.Alpha, Re.Cl)
+                gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
+
+                j += 1
+                err.append(calc.compare_gamma(gamma, gamma_new))
+
+            c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
+            c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
+
+        axs[0].plot(alpha_sweep, c_l_sweep, label=str('Re=' + str(Re.Re)))
+        axs[1].plot(alpha_sweep, c_di_sweep, label=str('Re=' + str(Re.Re)))
+
+    axs[0].grid()
+    # axs[0].legend()
+    axs[1].grid()
+    axs[1].legend()
+    plt.show()
+
+    fields = ['Alpha', 'C_di', 'C_l']
+
+    predict = []
+    for k in range(len(alpha_sweep)):
+        predict.append([str(alpha_sweep[k]), str(c_di_sweep[k]), str(c_l_sweep[k])])
+
+    writename = 'output.csv'
+
+    with open(writename, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(fields)
+        writer.writerows(predict)
+
+    csvfile.close()
