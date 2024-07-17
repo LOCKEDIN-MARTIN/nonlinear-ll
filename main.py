@@ -116,7 +116,7 @@ if __name__ == '__main__':
     for i in range(0, len(Re_list)):
         Re_dict[Re_list[i]] = clData(Re_list[i])
 
-    # calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
+    calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
     data = [data_50k, data_100k, data_200k, data_500k, data_1m]
 
     fig = plt.figure()

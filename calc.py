@@ -21,5 +21,5 @@ def reduce(clData_list):
         lb = j.Alpha.index(scm)
         ub = j.Alpha.index(lcm)
 
-        del j.Alpha[lb:ub+1]
-        del j.Cl[lb:ub+1]
+        j.Alpha = j.Alpha[lb:ub+1]
+        j.Cl = j.Cl[lb:ub+1]
