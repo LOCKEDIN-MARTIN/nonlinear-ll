@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import csv
 from pathlib import Path
 import re
+import scipy
 
 import aero
 import geom
@@ -93,6 +94,12 @@ if __name__ == '__main__':
     aspect_ratio = 4.5
     eff = 0.98
 
+    freestream = 10  # [m/s]
+    area = 0.233  # [m2]
+
+    chord = geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations)
+    Re_stations = aero.get_Re(1.225, freestream, chord, 0.00001837)
+
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
@@ -108,9 +115,6 @@ if __name__ == '__main__':
     data_500k.fetch()
     data_1m.fetch()
 
-    num_angles = 35
-    alpha_sweep = np.linspace(0, 7, num_angles)
-
     Re_list = [50000, 100000, 200000, 500000, 1000000]
     Re_dict = {}
     for i in range(0, len(Re_list)):
@@ -119,54 +123,80 @@ if __name__ == '__main__':
     calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
     data = [data_50k, data_100k, data_200k, data_500k, data_1m]
 
-    fig = plt.figure()
-    axs = fig.subplots(1, 2, sharey=False)
+    num_angles = 35
+    alpha_sweep = np.linspace(min(data[0].Alpha), max(data[0].Alpha), num_angles)
 
-    for Re in data:
+    c_l_sweep = []
+    c_di_sweep = []
 
-        c_l_sweep = []
-        c_di_sweep = []
+    z = []
+    for i in data:
+        z += i.Cl
 
-        for aoa in alpha_sweep:
+    y = []
+    for j in Re_list:
+        k = 0
+        while k < len(data[0].Alpha):
+            y.append(j)
+            k += 1
 
-            aoa = aoa * np.ones(num_stations - 1)
-            freestream = 10  # [m/s]
-            area = 0.233  # [m2]
+    x = []
+    for i in Re_list:
+        x += data[0].Alpha
 
-            gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
+    coords = list(zip(x, y))
+    print(coords)
+
+    for aoa in alpha_sweep:
+
+        aoa = aoa * np.ones(num_stations - 1)
+
+        gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
+
+        alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
+        alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+
+        # print(list(zip(y, data[0].Alpha)))
+
+        c_l = scipy.interpolate.LinearNDInterpolator(coords, z)  # fix this
+        A, R = np.meshgrid(data[0].Alpha, Re_list)
+        cl_function = c_l(A, R)
+        cl_interpolated = c_l.__call__(alpha_e, Re_stations)
+
+        plt.pcolormesh(A, R, cl_function, shading='auto')
+        plt.plot(alpha_e, Re_stations, "ok", label="interpolation points")
+        plt.legend()
+        plt.colorbar()
+        plt.show()
+
+        gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
+
+        j = 0
+        err = [calc.compare_gamma(gamma, gamma_new)]
+        D = 0.05
+        while (err[j] > 0.01) & (j < 600):
+            gamma = gamma + D * (gamma_new - gamma)
 
             alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
             alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+            # c_l = scipy.interpolate.LinearNDInterpolator(coords, z)
+            cl_interpolated = c_l.__call__(alpha_e, Re_stations)
+            gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
 
-            c_l = np.interp(alpha_e, Re.Alpha, Re.Cl)
+            j += 1
+            err.append(calc.compare_gamma(gamma, gamma_new))
 
-            gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
+        c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
+        c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
 
-            j = 0
-            err = [calc.compare_gamma(gamma, gamma_new)]
-            D = 0.05
-            while (err[j] > 0.01) & (j < 600):
-                gamma = gamma + D * (gamma_new - gamma)
+    # axs[0].plot(alpha_sweep, c_l_sweep, label=str('Re=' + str(Re.Re)))
+    # axs[1].plot(alpha_sweep, c_di_sweep, label=str('Re=' + str(Re.Re)))
 
-                alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-                alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-                c_l = np.interp(alpha_e, Re.Alpha, Re.Cl)
-                gamma_new = aero.get_new_gamma_dist(freestream, geom.discrete_wing(root_c, 0, root_c, tip_offset, num_stations), c_l)
-
-                j += 1
-                err.append(calc.compare_gamma(gamma, gamma_new))
-
-            c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
-            c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
-
-        axs[0].plot(alpha_sweep, c_l_sweep, label=str('Re=' + str(Re.Re)))
-        axs[1].plot(alpha_sweep, c_di_sweep, label=str('Re=' + str(Re.Re)))
-
-    axs[0].grid()
-    # axs[0].legend()
-    axs[1].grid()
-    axs[1].legend()
-    plt.show()
+    # axs[0].grid()
+    # # axs[0].legend()
+    # axs[1].grid()
+    # # axs[1].legend()
+    # plt.show()
 
     fields = ['Alpha', 'C_di', 'C_l']
 

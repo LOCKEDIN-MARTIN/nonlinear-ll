@@ -1,4 +1,5 @@
 import numpy as np
+from operator import itemgetter
 
 
 def compare_gamma(gamma_i, gamma_f):
@@ -23,3 +24,15 @@ def reduce(clData_list):
 
         j.Alpha = j.Alpha[lb:ub+1]
         j.Cl = j.Cl[lb:ub+1]
+
+    intr = list(set.intersection(*[set(x.Alpha) for x in clData_list]))
+    intr.sort()
+
+    for k in clData_list:
+
+        tempAlpha = k.Alpha
+        tempCl = k.Cl
+
+        indices = [k.Alpha.index(x) for x in intr]
+        k.Alpha = [tempAlpha[x] for x in indices]
+        k.Cl = [tempCl[x] for x in indices]
