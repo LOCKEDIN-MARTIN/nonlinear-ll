@@ -17,8 +17,8 @@ class clData:
         self.Cl = []
         self.Cl_Alpha = []
 
-    def fetch(self):
-        data_dir = input("Paste path to folder containing cl data:\n")
+    def fetch(self, data_dir):
+
         file_prefix = r'\xf-n0012-il-'
         file_suffix = '.csv'
 
@@ -56,33 +56,6 @@ class clData:
                 self.Alpha.append(curr[alpha_index])
                 self.Cl.append(curr[cl_index])
 
-    def plot(self, option):
-
-        plt.clf()
-
-        if option == 'a':
-
-            plt.plot(self.Alpha, self.Cl)
-            plt.grid()
-            plt.title('Cl-Alpha plot')
-            plt.ylabel('Cl')
-            plt.xlabel('Alpha')
-
-        elif option == 's':
-
-            self.slope()
-            plt.plot(self.Alpha, self.Cl_Alpha)
-            plt.grid()
-            plt.title('Cl-Alpha Slope plot')
-            plt.ylabel('Cl-Alpha Slope')
-            plt.xlabel('Alpha')
-
-        plt.show()
-
-    def slope(self):
-        self.Cl_Alpha = np.gradient(self.Cl, self.Alpha)
-        return self.Cl_Alpha
-
 
 if __name__ == '__main__':
     half_span = 0.724  # [m]
@@ -109,11 +82,13 @@ if __name__ == '__main__':
     data_500k = clData(500000)
     data_1m = clData(1000000)
 
-    data_50k.fetch()
-    data_100k.fetch()
-    data_200k.fetch()
-    data_500k.fetch()
-    data_1m.fetch()
+    data_dir = input("Paste path to folder containing cl data:\n")
+
+    data_50k.fetch(data_dir)
+    data_100k.fetch(data_dir)
+    data_200k.fetch(data_dir)
+    data_500k.fetch(data_dir)
+    data_1m.fetch(data_dir)
 
     Re_list = [50000, 100000, 200000, 500000, 1000000]
     Re_dict = {}
@@ -145,7 +120,7 @@ if __name__ == '__main__':
         x += data[0].Alpha
 
     coords = list(zip(x, y))
-    print(coords)
+    fig, (ax1, ax2) = plt.subplots(1, 2)
 
     for aoa in alpha_sweep:
 
@@ -156,18 +131,10 @@ if __name__ == '__main__':
         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
 
-        # print(list(zip(y, data[0].Alpha)))
-
         c_l = scipy.interpolate.LinearNDInterpolator(coords, z)  # fix this
         A, R = np.meshgrid(data[0].Alpha, Re_list)
         cl_function = c_l(A, R)
         cl_interpolated = c_l.__call__(alpha_e, Re_stations)
-
-        plt.pcolormesh(A, R, cl_function, shading='auto')
-        plt.plot(alpha_e, Re_stations, "ok", label="interpolation points")
-        plt.legend()
-        plt.colorbar()
-        plt.show()
 
         gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
 
@@ -179,7 +146,7 @@ if __name__ == '__main__':
 
             alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
             alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-            # c_l = scipy.interpolate.LinearNDInterpolator(coords, z)
+
             cl_interpolated = c_l.__call__(alpha_e, Re_stations)
             gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
 
@@ -189,14 +156,17 @@ if __name__ == '__main__':
         c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
         c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
 
-    # axs[0].plot(alpha_sweep, c_l_sweep, label=str('Re=' + str(Re.Re)))
-    # axs[1].plot(alpha_sweep, c_di_sweep, label=str('Re=' + str(Re.Re)))
+    ax1.plot(alpha_sweep, c_l_sweep)
+    ax2.plot(alpha_sweep, c_di_sweep)
 
-    # axs[0].grid()
-    # # axs[0].legend()
-    # axs[1].grid()
-    # # axs[1].legend()
-    # plt.show()
+    ax1.set_title('Lift coefficient')
+    ax2.set_title('Induced drag coefficient')
+    ax1.set(ylabel='C_l')
+    ax2.set(ylabel='C_di')
+    fig.text(0.5, 0.04, 'Alpha [deg]', ha='center')
+    ax1.grid()
+    ax2.grid()
+    plt.show()
 
     fields = ['Alpha', 'C_di', 'C_l']
 
