@@ -1,16 +1,19 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import csv
-from pathlib import Path
 import re
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 import scipy
 
-import aero
-import geom
-import calc
+from nll import aero, calc, geom
 
 
-class clData:
+class CLData:
+    """
+    Abstract class for storing and fetching cl data from csv files
+    """
+
     def __init__(self, Re):
         self.Re = Re
         self.Alpha = []
@@ -18,18 +21,19 @@ class clData:
         self.Cl_Alpha = []
 
     def fetch(self, data_dir):
-
-        file_prefix = r'\xf-n0012-il-'
-        file_suffix = '.csv'
+        file_prefix = r"\xf-n0012-il-"
+        file_suffix = ".csv"
 
         target = Path(data_dir + file_prefix + str(self.Re) + file_suffix)
 
         if not target.is_file():
-            print('File not found, double-check directory and name of: ', target)
+            print("File not found, double-check directory and name of: ", target)
 
         else:
-            with open(target, newline='') as csvfile:
-                reader = list(csv.reader(csvfile, delimiter=' ', quotechar='|'))  # converted to list for indexing
+            with open(target, newline="") as csvfile:
+                reader = list(
+                    csv.reader(csvfile, delimiter=" ", quotechar="|")
+                )  # converted to list for indexing
             csvfile.close()
 
             blank_line = 0
@@ -40,24 +44,26 @@ class clData:
                 else:
                     row_index += 1
 
-            reader = reader[row_index + 1:]
+            reader = reader[row_index + 1 :]
             reformatted_reader = []
             for row in reader:
                 string_to_split = row[0]
-                reformatted_reader.append(re.split(',', string_to_split))
+                reformatted_reader.append(re.split(",", string_to_split))
 
             var_name = reformatted_reader[0]
-            alpha_index = var_name.index('Alpha')
-            cl_index = var_name.index('Cl')
+            alpha_index = var_name.index("Alpha")
+            cl_index = var_name.index("Cl")
 
             for row_index in range(1, len(reformatted_reader)):
-                reformatted_reader[row_index] = [float(ii) for ii in reformatted_reader[row_index]]
+                reformatted_reader[row_index] = [
+                    float(ii) for ii in reformatted_reader[row_index]
+                ]
                 curr = reformatted_reader[row_index]
                 self.Alpha.append(curr[alpha_index])
                 self.Cl.append(curr[cl_index])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     half_span = 0.724  # [m]
     root_c = 0.4  # [m]
     tip_c = 0.234  # [m]
@@ -76,11 +82,11 @@ if __name__ == '__main__':
     stations = np.linspace(0, half_span, num_stations)
     stations = stations[:-1]
 
-    data_50k = clData(50000)
-    data_100k = clData(100000)
-    data_200k = clData(200000)
-    data_500k = clData(500000)
-    data_1m = clData(1000000)
+    data_50k = CLData(50000)
+    data_100k = CLData(100000)
+    data_200k = CLData(200000)
+    data_500k = CLData(500000)
+    data_1m = CLData(1000000)
 
     data_dir = input("Paste path to folder containing cl data:\n")
 
@@ -93,7 +99,7 @@ if __name__ == '__main__':
     Re_list = [50000, 100000, 200000, 500000, 1000000]
     Re_dict = {}
     for i in range(0, len(Re_list)):
-        Re_dict[Re_list[i]] = clData(Re_list[i])
+        Re_dict[Re_list[i]] = CLData(Re_list[i])
 
     calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])
     data = [data_50k, data_100k, data_200k, data_500k, data_1m]
@@ -123,10 +129,11 @@ if __name__ == '__main__':
     fig, (ax1, ax2) = plt.subplots(1, 2)
 
     for aoa in alpha_sweep:
-
         aoa = aoa * np.ones(num_stations - 1)
 
-        gamma = aero.gamma_dist(stations, 30, half_span, 1.225, freestream)  # don't think L0 does anything
+        gamma = aero.gamma_dist(
+            stations, 30, half_span, 1.225, freestream
+        )  # don't think L0 does anything
 
         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
@@ -154,29 +161,33 @@ if __name__ == '__main__':
             err.append(calc.compare_gamma(gamma, gamma_new))
 
         c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
-        c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
+        c_di_sweep.append(
+            aero.get_induced_drag(
+                aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff
+            )
+        )
 
     ax1.plot(alpha_sweep, c_l_sweep)
     ax2.plot(alpha_sweep, c_di_sweep)
 
-    ax1.set_title('Lift coefficient')
-    ax2.set_title('Induced drag coefficient')
-    ax1.set(ylabel='C_l')
-    ax2.set(ylabel='C_di')
-    fig.text(0.5, 0.04, 'Alpha [deg]', ha='center')
+    ax1.set_title("Lift coefficient")
+    ax2.set_title("Induced drag coefficient")
+    ax1.set(ylabel="C_l")
+    ax2.set(ylabel="C_di")
+    fig.text(0.5, 0.04, "Alpha [deg]", ha="center")
     ax1.grid()
     ax2.grid()
     plt.show()
 
-    fields = ['Alpha', 'C_di', 'C_l']
+    fields = ["Alpha", "C_di", "C_l"]
 
     predict = []
     for k in range(len(alpha_sweep)):
         predict.append([str(alpha_sweep[k]), str(c_di_sweep[k]), str(c_l_sweep[k])])
 
-    writename = 'output.csv'
+    writename = "output.csv"
 
-    with open(writename, 'w') as csvfile:
+    with open(writename, "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(fields)
         writer.writerows(predict)

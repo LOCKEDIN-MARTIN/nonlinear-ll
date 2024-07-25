@@ -1,12 +1,14 @@
 import numpy as np
 
 
-def get_cl(alpha, m):  # m is VERY IMPORTANT TO GET RIGHT
+def get_cl(alpha: float, m):  # m is VERY IMPORTANT TO GET RIGHT
     return alpha * m
 
 
-def gamma_dist(y, L0, b, rho, Vinf):  # note that this assumes an elliptical lift distribution
-    dist = 1 / (rho * Vinf) * L0 * -y / (b ** 2 * np.sqrt(1 - (y / b) ** 2))
+def gamma_dist(
+    y, L0, b, rho, Vinf
+):  # note that this assumes an elliptical lift distribution
+    dist = 1 / (rho * Vinf) * L0 * -y / (b**2 * np.sqrt(1 - (y / b) ** 2))
 
     return dist
 
@@ -16,7 +18,7 @@ def get_induced_alpha(Vinf, g, y):
 
     a_i = np.zeros(len(y))
     for i in range(len(y)):
-        np.seterr(divide='ignore')
+        np.seterr(divide="ignore")
         f = np.array(dgamma / (y[i] - y))
 
         nan_arr = np.isinf(f)
@@ -51,8 +53,27 @@ def get_lift(Vinf, S, g, y):
 
 
 def get_induced_drag(C_l, AR, e):
-    return C_l ** 2 / (np.pi * AR * e)
+    return C_l**2 / (np.pi * AR * e)
 
 
-def get_Re(rho, u, c, mu):
+def get_Re(rho: float, u: float, c: float, mu: float) -> float:
+    """
+    Calculate the Reynolds number for a given flow.
+
+    Parameters
+    ----------
+    rho : float
+        Density [kg/m^3].
+    u : float
+        Velocity [m/s].
+    c : float
+        Chord length [m].
+    mu : float
+        Dynamic viscosity [kg/(m*s)].
+
+    Returns
+    -------
+    float
+        Reynolds number.
+    """
     return rho * u * c / mu
