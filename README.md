@@ -11,3 +11,18 @@ Nonlinear lifting line aerodynamic analysis code
 ## Usage
 
 The `nll` package contains several modules which can be used for aero calculations. An example is shown in the script `scripts/main.py`.
+
+### Calling `main.py`
+
+Accepts one argument for changing the aero data
+
+```plaintext
+usage: main.py [-h] [--data_dir DATA_DIR]
+
+Calculate lift and drag coefficients for a finite wing
+
+options:
+  -h, --help           show this help message and exit
+  --data_dir DATA_DIR  Path to folder containing aero data,
+                       default n0012_xfoil_data
+  ```

@@ -1,38 +1,66 @@
+from itertools import chain
+
 import numpy as np
-from operator import itemgetter
+from scipy.interpolate import LinearNDInterpolator
+
+from nll.aerodata import CLData
 
 
 def compare_gamma(gamma_i, gamma_f):
     return np.linalg.norm(gamma_f - gamma_i)
 
 
-def reduce(clData_list):
+def reduce(data_list: list[CLData]):
+    """
+    Reduces the data to the intersection of the alpha values in all the data sets.
 
-    scm = -100  # smallest common minimum
-    lcm = 100  # largest common maximum
+    Modifies the datasets in place.
 
-    for i in clData_list:
-        if i.Alpha[0] >= scm:
-            scm = i.Alpha[0]
-        if i.Alpha[-1] <= lcm:
-            lcm = i.Alpha[-1]
+    Parameters
+    ----------
+    data_list : list[CLData]
+        The list of datasets to reduce.
+    """
+    # find only alphas which are common to all datasets
+    all_alphas = [set(x.Alpha) for x in data_list]
 
-    for j in clData_list:
+    common_alpha = sorted(set.intersection(*all_alphas))
 
-        lb = j.Alpha.index(scm)
-        ub = j.Alpha.index(lcm)
+    for cld in data_list:
+        tempAlpha = cld.Alpha
+        tempCl = cld.Cl
 
-        j.Alpha = j.Alpha[lb:ub+1]
-        j.Cl = j.Cl[lb:ub+1]
+        indices = [cld.Alpha.index(x) for x in common_alpha]
+        cld.Alpha = [tempAlpha[x] for x in indices]
+        cld.Cl = [tempCl[x] for x in indices]
 
-    intr = list(set.intersection(*[set(x.Alpha) for x in clData_list]))
-    intr.sort()
 
-    for k in clData_list:
+def generate_aerodata_interpolant(
+    data_list: list[CLData],
+) -> LinearNDInterpolator:
+    """
+    Generate an interpolant for the aerodynamic data.
 
-        tempAlpha = k.Alpha
-        tempCl = k.Cl
+    Parameters
+    ----------
+    data_list : list[CLData]
+        The list of datasets to interpolate, should be reduced first.
 
-        indices = [k.Alpha.index(x) for x in intr]
-        k.Alpha = [tempAlpha[x] for x in indices]
-        k.Cl = [tempCl[x] for x in indices]
+    Returns
+    -------
+    Callable[[float, float], float]
+        The interpolant function.
+    """
+    # construct interpolant
+    # output variable: Cl; input variables: Alpha, Re
+
+    # join all the data lists "end-to-end
+    v_cl = list(chain.from_iterable(d.Cl for d in data_list))
+    v_alpha = list(chain.from_iterable(d.Alpha for d in data_list))
+    # repeat Re values for each alpha
+    v_re = list(chain.from_iterable([d.Re] * len(d.Alpha) for d in data_list))
+
+    coords = list(zip(v_alpha, v_re))
+    cl_interpolant = LinearNDInterpolator(coords, v_cl)
+
+    return cl_interpolant
