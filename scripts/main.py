@@ -10,8 +10,6 @@ if __name__ == "__main__":
     # constants
     FILE_PREFIX = "xf-n0012-il-"
     NUM_ANGLES = 35
-    MAX_ITER = 600
-    TOL = 0.01
 
     # program arguments
     parser = argparse.ArgumentParser(
