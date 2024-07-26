@@ -74,7 +74,7 @@ def get_induced_alpha(Vinf: float, g: ArrayLike, y: ArrayLike) -> NDArray[np.flo
                 else:
                     f[check_index] = f[check_index - 1]
 
-        a_i[i] = 1 / (4 * np.pi * Vinf) * np.trapz(f, y)
+        a_i[i] = 1 / (4 * np.pi * Vinf) * np.trapezoid(f, y)
 
     return a_i
 
@@ -144,7 +144,7 @@ def get_lift(Vinf: float, S: float, g: ArrayLike, y: ArrayLike) -> float:
     float
         Lift coefficient
     """
-    return 2 / (Vinf * S) * np.trapz(g, y)
+    return 2 / (Vinf * S) * np.trapezoid(g, y)
 
 
 def get_induced_drag(C_l, AR, e) -> float:

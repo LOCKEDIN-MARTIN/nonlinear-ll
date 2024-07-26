@@ -26,3 +26,9 @@ options:
   --data_dir DATA_DIR  Path to folder containing aero data,
                        default n0012_xfoil_data
   ```
+
+### Running Tests
+
+Run `pip install -e .[dev]` to install dependencies for development (currently just `pytest`).
+
+Run unit tests using the command `pytest` from the root of the repo.
