@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from nll import aero, calc, compute, geom
+from nll import aero, calc, geom
 from nll.aerodata import CLData
 
 
@@ -90,8 +90,3 @@ def test_validation_baseline():
     assert alpha_sweep == pytest.approx(val_alpha, rel=1e-6)
     assert np.array(c_l_sweep) == pytest.approx(val_cl, rel=1e-6)
     assert np.array(c_di_sweep) == pytest.approx(val_cd, rel=1e-6)
-
-
-def test_validation_compute():
-    # TODO: add regression test using compute.py
-    pass

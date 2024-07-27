@@ -21,7 +21,7 @@ def calculate_circulation(
     max_iter: int = 600,
 ) -> NDArray[np.floating]:
     """
-    Compute the lift and drag coefficients for a given set of alpha values,
+    Compute the circulation distribution for a given set of alpha values,
     using the nonlinear lifting line method.
 
     Parameters
@@ -29,7 +29,7 @@ def calculate_circulation(
     cl_interpolant : LinearNDInterpolator
         The interpolant for the aerodynamic data.
     alpha_values : ArrayLike
-        The angles of attack to compute the lift and drag coefficients for.
+        The angles of attack to compute at.
     y_stations : ArrayLike
         The y-values of the stations.
     chord_stations : ArrayLike
