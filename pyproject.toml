@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "nll"
+version = "0.1.0"
+dependencies = ["numpy", "matplotlib", "scipy", "tqdm"]
+optional-dependencies = { dev = ["pytest"] }
+
+[tool.setuptools.packages.find]
+include = ["nll"]
