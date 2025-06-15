@@ -72,7 +72,6 @@ class clData:
         self.Cl_Alpha = np.gradient(self.Cl, self.Alpha)
         return self.Cl_Alpha
 
-
 if __name__ == '__main__':
     half_span = 0.724  # [m]
     root_c = 0.4  # [m]

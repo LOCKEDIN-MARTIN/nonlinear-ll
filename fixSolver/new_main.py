@@ -128,7 +128,7 @@ if __name__ == '__main__':
     for aoa in alpha_sweep:
 
         aoa = aoa * np.ones(num_stations)
-        c_l = 
+        c_l = 1
         gamma = aero.gamma_dist(freestream, c_l, span/2, stations)  # don't think L0 does anything
 
         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
