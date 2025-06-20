@@ -6,7 +6,7 @@ def get_cl(alpha, m):  # m is VERY IMPORTANT TO GET RIGHT
 
 
 def gamma_dist(Vinf, c_l, b, x):  # note that this assumes an elliptical lift distribution
-    return Vinf*c_l/b*np.sqrt(b^2/4-x^2)
+    return Vinf*c_l/(b)*np.sqrt((b)**2-x**2)
 
 
 def get_induced_alpha(Vinf, g, y):

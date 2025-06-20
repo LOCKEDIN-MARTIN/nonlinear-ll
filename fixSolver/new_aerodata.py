@@ -56,5 +56,3 @@ cl_grid = np.stack([cl_data[Re] for Re in Re_values], axis=1)  # shape: (n_alpha
 Re_grid = np.array(Re_values)
 
 interpolator = RegularGridInterpolator((alpha_common, Re_grid), cl_grid, bounds_error=False, fill_value=np.nan)
-
-print(interpolator((6, 60000)))
