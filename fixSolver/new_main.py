@@ -11,6 +11,7 @@ import calc
 
 from new_aerodata import *
 from aero import *
+from calc import *
 
 # class clData:
 #     def __init__(self, Re):
@@ -75,12 +76,23 @@ if __name__ == '__main__':
     Re_stations = aero.get_Re(1.225, freestream, chord, 0.00001837)
     alpha = 6  # [deg]
 
+    # circulation calculation
     interpolator_input = np.column_stack((alpha*np.ones(np.shape(Re_stations)), Re_stations))
     c_l = interpolator(interpolator_input)
-    gamma_distribution = gamma_dist(freestream, c_l, span/2, stations)  # initial guess assuming elliptical lift distribution
-    
-    # turn this into a loop over an alpha sweep
+    g = gamma_dist(freestream, c_l, span/2, stations)  # initial guess assuming elliptical lift distribution
+    dg_dx = -g*stations
 
+    # induced angle of attack
+    a_i = []
+    for n in range(0, len(stations)):  # at each x_n
+        a_i.append(1/(4*np.pi*freestream)*simpsons_with_singularity_fix(dg_dx, stations, stations[n]))
+
+    # effective angle of attack
+    a_eff = alpha*np.ones(np.shape(Re_stations)) - a_i
+    
+    # sectional lift coefficient
+    interpolator_input = np.column_stack((a_eff*np.ones(np.shape(Re_stations)), Re_stations))
+    c_l = interpolator(interpolator_input)
 
     # # data_dir = input("Paste path to folder containing cl data:\n")
     # data_dir = r"C:\Users\Daniel F\Documents\GitHub\nonlinear-ll\n0012_xfoil_data"
