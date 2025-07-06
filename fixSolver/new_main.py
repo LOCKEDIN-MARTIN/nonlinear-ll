@@ -1,63 +1,9 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import csv
-from pathlib import Path
-import re
-import scipy
 
 import aero
-import geom
-import calc
-
 from new_aerodata import *
 from aero import *
 from calc import *
-
-# class clData:
-#     def __init__(self, Re):
-#         self.Re = Re
-#         self.Alpha = []
-#         self.Cl = []
-#         self.Cl_Alpha = []
-
-#     def fetch(self, data_dir):
-
-#         file_prefix = r'\xf-n0012-il-'
-#         file_suffix = '.csv'
-
-#         target = Path(data_dir + file_prefix + str(self.Re) + file_suffix)
-
-#         if not target.is_file():
-#             print('File not found, double-check directory and name of: ', target)
-
-#         else:
-#             with open(target, newline='') as csvfile:
-#                 reader = list(csv.reader(csvfile, delimiter=' ', quotechar='|'))  # converted to list for indexing
-#             csvfile.close()
-
-#             blank_line = 0
-#             row_index = 0
-#             while not blank_line:
-#                 if not reader[row_index]:
-#                     blank_line = 1
-#                 else:
-#                     row_index += 1
-
-#             reader = reader[row_index + 1:]
-#             reformatted_reader = []
-#             for row in reader:
-#                 string_to_split = row[0]
-#                 reformatted_reader.append(re.split(',', string_to_split))
-
-#             var_name = reformatted_reader[0]
-#             alpha_index = var_name.index('Alpha')
-#             cl_index = var_name.index('Cl')
-
-#             for row_index in range(1, len(reformatted_reader)):
-#                 reformatted_reader[row_index] = [float(ii) for ii in reformatted_reader[row_index]]
-#                 curr = reformatted_reader[row_index]
-#                 self.Alpha.append(curr[alpha_index])
-#                 self.Cl.append(curr[cl_index])
 
 
 if __name__ == '__main__':
@@ -79,7 +25,7 @@ if __name__ == '__main__':
     # circulation calculation
     interpolator_input = np.column_stack((alpha*np.ones(np.shape(Re_stations)), Re_stations))
     c_l = interpolator(interpolator_input)
-    g = gamma_dist(freestream, c_l, span/2, stations)  # initial guess assuming elliptical lift distribution
+    g = gamma_dist(freestream, c_l, span/2, stations, chord, 1)  # initial guess assuming elliptical lift distribution
     dg_dx = -g*stations
 
     # induced angle of attack
@@ -94,89 +40,54 @@ if __name__ == '__main__':
     interpolator_input = np.column_stack((a_eff*np.ones(np.shape(Re_stations)), Re_stations))
     c_l = interpolator(interpolator_input)
 
-    # # data_dir = input("Paste path to folder containing cl data:\n")
-    # data_dir = r"C:\Users\Daniel F\Documents\GitHub\nonlinear-ll\n0012_xfoil_data"
+    # new circulation distribution
+    g_old = g
+    g_new = gamma_dist(freestream, c_l, span/2, stations, chord, 0)
 
-    # # initialise clData objects
-    # data_50k = clData(50000)
-    # data_100k = clData(100000)
-    # data_200k = clData(200000)
-    # data_500k = clData(500000)
-    # data_1m = clData(1000000)
-    # data_50k.fetch(data_dir)
-    # data_100k.fetch(data_dir)
-    # data_200k.fetch(data_dir)
-    # data_500k.fetch(data_dir)
-    # data_1m.fetch(data_dir)
+    # circulation comparison
+    tol = 1e-5  # accuracy requirement
+    g_diff = np.linalg.norm(g_new-g_old)/np.linalg.norm(g_new)
 
-    # Re_list = [50000, 100000, 200000, 500000, 1000000]
-    # Re_dict = {}
-    # for i in range(0, len(Re_list)):
-    #     Re_dict[Re_list[i]] = clData(Re_list[i])
+    # circulation update
+    D = 0.05  # damping coefficient
+    g_input = g_old + D*(g_new - g_old)
 
-    # calc.reduce([data_50k, data_100k, data_200k, data_500k, data_1m])  # smallest common and largest common angle of attack bounds
-    # data = [data_50k, data_100k, data_200k, data_500k, data_1m]
-    # num_angles = 35
-    # alpha_sweep = np.linspace(min(data[0].Alpha), max(data[0].Alpha), num_angles)
+    iter = 1
 
-    # c_l_sweep = []
-    # c_di_sweep = []
+    while g_diff > tol or iter < 150:
 
-    # # Cl as function of alpha for all input Reynolds numbers
-    # z = []
-    # for i in data:
-    #     z.append(i.Cl)
+        # circulation calculation
+        g = g_input  # work with new input circulation distribution
+        dg_dx = -g*stations
 
-    # # Reynolds number matching for all angles of attack for all input data
-    # y = []
-    # for j in Re_list:
-    #     yy = []
-    #     k = 0
-    #     while k < len(data[0].Alpha):
-    #         yy.append(j)
-    #         k += 1
-    #     y.append(yy)
+        # induced angle of attack
+        a_i = []
+        for n in range(0, len(stations)):  # at each x_n
+            a_i.append(1/(4*np.pi*freestream)*simpsons_with_singularity_fix(dg_dx, stations, stations[n]))
 
-    # # Angle of attack for all input data
-    # x = []
-    # for i in Re_list:
-    #     x.append(data[0].Alpha)
+        # effective angle of attack
+        a_eff = alpha*np.ones(np.shape(Re_stations)) - a_i
+        
+        # sectional lift coefficient
+        interpolator_input = np.column_stack((a_eff*np.ones(np.shape(Re_stations)), Re_stations))
+        c_l = interpolator(interpolator_input)
 
-    # # Angles of attack and corresponding Reynolds number pairing
-    # coords = list(zip(x, y))
-    # print(coords)
-    # # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # new circulation distribution
+        g_old = g
+        g_new = gamma_dist(freestream, c_l, span/2, stations, chord, 0)
 
-    # for aoa in alpha_sweep:
+        # circulation comparison
+        g_diff = np.linalg.norm(g_new-g_old)/np.linalg.norm(g_new)
 
-    #     aoa = aoa * np.ones(num_stations)
-    #     c_l = 1
-    #     gamma = aero.gamma_dist(freestream, c_l, span/2, stations)  # don't think L0 does anything
+        # circulation update
+        g_input = g_old + D*(g_new - g_old)
 
-    #     alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-    #     alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
+        # iteration count
+        iter += 1
 
-    #     c_l = scipy.interpolate.LinearNDInterpolator(coords, z)  # fix this
-    #     A, R = np.meshgrid(data[0].Alpha, Re_list)
-    #     cl_function = c_l(A, R)
-    #     cl_interpolated = c_l.__call__(alpha_e, Re_stations)
+    print(g_diff)
+    print(iter)
 
-    #     gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
-
-    #     j = 0
-    #     err = [calc.compare_gamma(gamma, gamma_new)]
-    #     D = 0.05
-    #     while (err[j] > 0.01) & (j < 600):
-    #         gamma = gamma + D * (gamma_new - gamma)
-
-    #         alpha_i = aero.get_induced_alpha(freestream, gamma, stations)
-    #         alpha_e = aero.get_effective_alpha(aoa, alpha_i, stations)
-
-    #         cl_interpolated = c_l.__call__(alpha_e, Re_stations)
-    #         gamma_new = aero.get_new_gamma_dist(freestream, chord, cl_interpolated)
-
-    #         j += 1
-    #         err.append(calc.compare_gamma(gamma, gamma_new))
 
     #     c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
     #     c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))

@@ -5,8 +5,11 @@ def get_cl(alpha, m):  # m is VERY IMPORTANT TO GET RIGHT
     return alpha * m
 
 
-def gamma_dist(Vinf, c_l, b, x):  # note that this assumes an elliptical lift distribution
-    return Vinf*c_l/(b)*np.sqrt((b)**2-x**2)
+def gamma_dist(Vinf, c_l, b, x, c, elliptical):  # note that this assumes an elliptical lift distribution
+    if elliptical:
+        return Vinf*c_l/(b)*np.sqrt((b)**2-x**2)
+    else:
+        return 1/2*Vinf*c*c_l
 
 
 def get_induced_alpha(Vinf, g, y):

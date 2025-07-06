@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d, RegularGridInterpolator
 
-data_dir = r"C:\Users\Daniel F\Documents\GitHub\nonlinear-ll\n0012_xfoil_data\\"
+# need a way to robustly get this
+# data_dir = r"C:\Users\Daniel F\Documents\GitHub\nonlinear-ll\n0012_xfoil_data\\"
+data_dir = r"C:\Users\daniel.foster\Documents\GitHub\nonlinear-ll\n0012_xfoil_data\\"
 pattern = re.compile(r"xf-n0012-il-(\d+)\.csv")
 
 re_to_cl_interp = {}
