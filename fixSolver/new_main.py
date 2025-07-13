@@ -16,6 +16,7 @@ if __name__ == '__main__':
     half_wing_chord = np.linspace(root_c, tip_c, int((num_stations+1)/2))
     chord = np.hstack((np.flip(half_wing_chord),half_wing_chord[1:]))
     stations = np.linspace(-span/2, span/2, num_stations)
+    area = (root_c - tip_c)*span + tip_c*span
 
     # freestream parameters
     freestream = 10  # [m/s]
@@ -85,9 +86,9 @@ if __name__ == '__main__':
         # iteration count
         iter += 1
 
-    print(g_diff)
-    print(iter)
-
+    # lift and induced drag coefficients
+    C_L = 2/(freestream*area)*np.trapz(g_new, stations, abs(stations[1]-stations[0]))
+    C_Di = 2/(freestream*area)*np.trapz(g_new*a_i, stations, abs(stations[1]-stations[0]))
 
     #     c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
     #     c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
