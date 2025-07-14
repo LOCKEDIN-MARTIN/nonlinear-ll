@@ -9,19 +9,19 @@ from calc import *
 if __name__ == '__main__':
 
     # wing parameters
-    span = 1.48  # [m]
-    root_c = 0.4  # [m]
-    tip_c = 0.234  # [m]
-    num_stations = 7  # make this an odd number to capture the root
+    span = 14  # [m]
+    root_c = 0.7  # [m]
+    tip_c = 0.7  # [m]
+    num_stations = 333  # make this an odd number to capture the root
     half_wing_chord = np.linspace(root_c, tip_c, int((num_stations+1)/2))
     chord = np.hstack((np.flip(half_wing_chord),half_wing_chord[1:]))
     stations = np.linspace(-span/2, span/2, num_stations)
     area = (root_c - tip_c)*span + tip_c*span
 
     # freestream parameters
-    freestream = 10  # [m/s]
+    freestream = 14  # [m/s]
     Re_stations = aero.get_Re(1.225, freestream, chord, 0.00001837)
-    alpha = 6  # [deg]
+    alpha = 7  # [deg]
 
     # circulation calculation
     interpolator_input = np.column_stack((alpha*np.ones(np.shape(Re_stations)), Re_stations))
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     iter = 1
 
-    while g_diff > tol or iter < 150:
+    while g_diff > tol:
 
         # circulation calculation
         g = g_input  # work with new input circulation distribution
@@ -89,6 +89,8 @@ if __name__ == '__main__':
     # lift and induced drag coefficients
     C_L = 2/(freestream*area)*np.trapz(g_new, stations, abs(stations[1]-stations[0]))
     C_Di = 2/(freestream*area)*np.trapz(g_new*a_i, stations, abs(stations[1]-stations[0]))
+
+    print(C_L, 'found after ', iter, ' iterations')
 
     #     c_l_sweep.append(aero.get_lift(freestream, area, gamma_new, stations))
     #     c_di_sweep.append(aero.get_induced_drag(aero.get_lift(freestream, area, gamma_new, stations), aspect_ratio, eff))
